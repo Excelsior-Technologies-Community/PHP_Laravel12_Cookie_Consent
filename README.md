@@ -1,0 +1,2 @@
+# PHP_Laravel12_Cookie_Consent
+PHP_Laravel12_Cookie_Consent
