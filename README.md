@@ -1,6 +1,4 @@
 # PHP_Laravel12_Cookie_Consent
-PHP_Laravel12_Cookie_Consent
-# PHP_Laravel12_Cookie_Consent
 
 A complete Laravel 12 Cookie Consent Management System using the **whitecube/laravel-cookie-consent** package. This project demonstrates how to implement GDPR‑compliant cookie consent with category selection, middleware protection, UI banners, and optional database storage.
 
