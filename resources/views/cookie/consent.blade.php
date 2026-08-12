@@ -13,34 +13,53 @@
 
                 <div class="card-body">
                     @if(session('success'))
-                        <div class="alert alert-success">
-                            {{ session('success') }}
-                        </div>
+                    <div class="alert alert-success">
+                        {{ session('success') }}
+                    </div>
                     @endif
 
                     <form method="POST" action="{{ route('cookie.accept') }}">
                         @csrf
-                        
+
                         <div class="mb-4">
                             <h5>Cookie Preferences</h5>
                             <p class="text-muted">
-                                We use cookies to help you navigate efficiently and perform certain functions. 
+                                We use cookies to help you navigate efficiently and perform certain functions.
                                 You will find detailed information about all cookies under each consent category below.
                             </p>
                         </div>
 
                         <!-- Necessary Cookies -->
                         <div class="cookie-category required">
+
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0">Necessary Cookies</h6>
-                                <label class="switch">
-                                    <input type="checkbox" name="categories[]" value="necessary" checked disabled>
-                                    <span class="slider"></span>
-                                </label>
+
+                                <div>
+                                    <h6 class="mb-1">
+                                        Necessary Cookies
+                                    </h6>
+
+                                    <small class="text-muted">
+                                        Always Active
+                                    </small>
+                                </div>
+
+                                <span class="badge bg-success">
+                                    Required
+                                </span>
+
                             </div>
+
                             <p class="small text-muted mb-0">
-                                These cookies are required for the website to function properly. They cannot be disabled.
+                                These cookies are required for the website to function properly.
+                                They cannot be disabled.
                             </p>
+
+                            <input
+                                type="hidden"
+                                name="categories[]"
+                                value="necessary">
+
                         </div>
 
                         <!-- Analytics Cookies -->
