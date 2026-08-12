@@ -30,12 +30,198 @@ class CookieController extends Controller
 
     /**
      * Show cookie consent audit history.
+     *
+     * Features:
+     * - Search
+     * - Action filter
+     * - Category filter
+     * - Pagination
      */
-    public function history()
+    public function history(Request $request)
     {
-        $consents = CookieConsent::latest()->paginate(10);
+        $query = CookieConsent::query();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Search
+        |--------------------------------------------------------------------------
+        | Search by:
+        | - Consent ID
+        | - IP Address
+        | - User Agent
+        */
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('consent_id', 'like', "%{$search}%")
+                    ->orWhere('ip_address', 'like', "%{$search}%")
+                    ->orWhere('user_agent', 'like', "%{$search}%");
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Action Filter
+        |--------------------------------------------------------------------------
+        */
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Category Filter
+        |--------------------------------------------------------------------------
+        | MySQL JSON_CONTAINS is used because categories
+        | are stored as JSON.
+        */
+        if ($request->filled('category')) {
+            $query->whereJsonContains(
+                'categories',
+                $request->category
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Pagination
+        |--------------------------------------------------------------------------
+        */
+        $consents = $query
+            ->oldest()
+            ->paginate(5)
+            ->withQueryString();
 
         return view('cookie.history', compact('consents'));
+    }
+
+    /**
+     * Export filtered consent history as CSV.
+     */
+    public function exportHistory(Request $request)
+    {
+        $query = CookieConsent::query();
+
+        /*
+        |--------------------------------------------------------------------------
+        | Search
+        |--------------------------------------------------------------------------
+        */
+        if ($request->filled('search')) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+                $q->where('consent_id', 'like', "%{$search}%")
+                    ->orWhere('ip_address', 'like', "%{$search}%")
+                    ->orWhere('user_agent', 'like', "%{$search}%");
+            });
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Action Filter
+        |--------------------------------------------------------------------------
+        */
+        if ($request->filled('action')) {
+            $query->where('action', $request->action);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Category Filter
+        |--------------------------------------------------------------------------
+        */
+        if ($request->filled('category')) {
+            $query->whereJsonContains(
+                'categories',
+                $request->category
+            );
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Get All Matching Records
+        |--------------------------------------------------------------------------
+        | Export should NOT use pagination.
+        */
+        $consents = $query
+            ->latest()
+            ->get();
+
+        $filename = 'cookie-consent-history-' . now()->format('Y-m-d-H-i-s') . '.csv';
+
+        return response()->streamDownload(function () use ($consents) {
+
+            $handle = fopen('php://output', 'w');
+
+            /*
+            |--------------------------------------------------------------------------
+            | CSV Header
+            |--------------------------------------------------------------------------
+            */
+            fputcsv($handle, [
+                'ID',
+                'Date',
+                'Time',
+                'Action',
+                'Consent Given',
+                'Necessary',
+                'Analytics',
+                'Marketing',
+                'IP Address',
+                'User Agent',
+                'Consent ID',
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | CSV Rows
+            |--------------------------------------------------------------------------
+            */
+            foreach ($consents as $consent) {
+
+                $categories = $consent->categories ?? [];
+
+                fputcsv($handle, [
+                    $consent->id,
+
+                    $consent->created_at
+                        ? $consent->created_at->format('d M Y')
+                        : '',
+
+                    $consent->created_at
+                        ? $consent->created_at->format('h:i A')
+                        : '',
+
+                    $consent->action_label,
+
+                    $consent->consent_given ? 'Yes' : 'No',
+
+                    in_array('necessary', $categories)
+                        ? 'Yes'
+                        : 'No',
+
+                    in_array('analytics', $categories)
+                        ? 'Yes'
+                        : 'No',
+
+                    in_array('marketing', $categories)
+                        ? 'Yes'
+                        : 'No',
+
+                    $consent->ip_address ?? '',
+
+                    $consent->user_agent ?? '',
+
+                    $consent->consent_id,
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv',
+        ]);
     }
 
     /**
@@ -171,8 +357,12 @@ class CookieController extends Controller
     /**
      * Store consent action in database.
      */
-    protected function storeConsentInDatabase(Request $request, bool $consent, array $categories, string $action): void 
-    {
+    protected function storeConsentInDatabase(
+        Request $request,
+        bool $consent,
+        array $categories,
+        string $action
+    ): void {
         CookieConsent::create([
             'ip_address' => $request->ip(),
             'user_agent' => $request->userAgent(),
