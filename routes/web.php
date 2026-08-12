@@ -21,37 +21,75 @@ Route::get('/', function () {
 
 Route::prefix('cookie')->name('cookie.')->group(function () {
 
+    /*
+    |--------------------------------------------------------------------------
+    | Consent Page
+    |--------------------------------------------------------------------------
+    */
     Route::get('/consent', [
         CookieController::class,
         'consent'
     ])->name('consent');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Accept / Reject
+    |--------------------------------------------------------------------------
+    */
     Route::post('/accept', [
         CookieController::class,
         'accept'
     ])->name('accept');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Update Preferences
+    |--------------------------------------------------------------------------
+    */
     Route::post('/update', [
         CookieController::class,
         'update'
     ])->name('update');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Revoke Consent
+    |--------------------------------------------------------------------------
+    */
     Route::post('/revoke', [
         CookieController::class,
         'revoke'
     ])->name('revoke');
 
-    // New: Cookie Policy
+    /*
+    |--------------------------------------------------------------------------
+    | Cookie Policy
+    |--------------------------------------------------------------------------
+    */
     Route::get('/policy', [
         CookieController::class,
         'policy'
     ])->name('policy');
 
-    // New: Consent Audit History
+    /*
+    |--------------------------------------------------------------------------
+    | Consent History
+    |--------------------------------------------------------------------------
+    */
     Route::get('/history', [
         CookieController::class,
         'history'
     ])->name('history');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Export Consent History
+    |--------------------------------------------------------------------------
+    */
+    Route::get('/history/export', [
+        CookieController::class,
+        'exportHistory'
+    ])->name('history.export');
 });
 
 /*
