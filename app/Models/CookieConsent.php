@@ -14,19 +14,33 @@ class CookieConsent extends Model
         'user_agent',
         'consent_given',
         'categories',
-        'consent_id'
+        'consent_id',
+        'action',
     ];
 
     protected $casts = [
         'consent_given' => 'boolean',
-        'categories' => 'array'
+        'categories' => 'array',
     ];
 
     /**
-     * Generate unique consent ID
+     * Generate unique consent ID.
      */
     public static function generateConsentId(): string
     {
         return uniqid('consent_', true) . '_' . bin2hex(random_bytes(16));
+    }
+
+    /**
+     * Get readable action label.
+     */
+    public function getActionLabelAttribute(): string
+    {
+        return match ($this->action) {
+            'accepted' => 'Accepted',
+            'updated' => 'Updated',
+            'revoked' => 'Revoked',
+            default => ucfirst($this->action),
+        };
     }
 }
